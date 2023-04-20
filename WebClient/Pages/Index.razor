@@ -1,0 +1,58 @@
+﻿@page "/"
+
+<PageTitle>Index</PageTitle>
+
+<h1>Notification test</h1>
+
+<p>Are notifications turned on: @(IsSubscribed ? "Yes" : "No")</p> 
+<div class="d-flex justify-content-around">
+    <button @onclick="@InitSubscription">Turn ON notification</button>
+    <button @onclick="@TurnOffNotifications">Turn OFF notification</button>
+</div>
+@code
+{
+    [Inject] protected IJSRuntime JSRuntime { get; set; }
+    [Inject] protected HttpClient httpClient { get; set; }
+    
+    protected bool IsSubscribed { get; set; }
+    protected NotificationSubscription? Subscription { get; set; }
+    protected List<NotificationSubscription>? SubscriptionList { get; set; } = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        IsSubscribed = await JSRuntime.InvokeAsync<bool>("window.blazorPushNotifications.isSubscribed");
+    }
+
+    protected  async void InitSubscription()
+    {
+        Subscription = await JSRuntime.InvokeAsync<NotificationSubscription>("window.blazorPushNotifications.requestSubscription");
+
+        if (Subscription != null)
+        {
+            Subscription.UserId = "1";
+            await  httpClient.PostAsJsonAsync("https://localhost:7029/api/notification", Subscription);
+        }
+            IsSubscribed = await JSRuntime.InvokeAsync<bool>("window.blazorPushNotifications.isSubscribed");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected async void TurnOffNotifications()
+    {
+        await JSRuntime.InvokeAsync<NotificationSubscription>("window.blazorPushNotifications.turnOffNotifications");
+        IsSubscribed = await JSRuntime.InvokeAsync<bool>("window.blazorPushNotifications.isSubscribed");
+        await InvokeAsync(StateHasChanged);
+    }
+    public class NotificationSubscription
+    {
+        public int NotificationSubscriptionId { get; set; }
+
+        public string UserId { get; set; }
+
+        public string Url { get; set; }
+
+        public string P256dh { get; set; }
+
+        public string Auth { get; set; } 
+    }
+}
+

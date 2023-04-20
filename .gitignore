@@ -1,0 +1,6 @@
+.vs
+.idea
+WebClient/bin
+WebClient/obj
+Api/bin
+Api/obj
